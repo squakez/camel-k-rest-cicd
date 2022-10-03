@@ -22,15 +22,15 @@ NOTE: make sure development and production operators share the same container re
 Development environment:
 
 ```
-kubectl apply -f db/conf-dev.yaml
-kubectl create secret generic my-datasource --from-file datasource-dev.properties -n development
+kubectl apply -f db/conf-dev.yaml -n development
+kubectl create secret generic my-datasource --from-file db/datasource-dev.properties -n development
 ```
 
 Production environment:
 
 ```
-kubectl apply -f db/conf-prod.yaml
-kubectl create secret generic my-datasource --from-file datasource-prod.properties -n production
+kubectl apply -f db/conf-prod.yaml -n production
+kubectl create secret generic my-datasource --from-file db/datasource-prod.properties -n production
 ```
 
 NOTE: the database settings are not meant to be used in any production environment without applying proper security policies.
