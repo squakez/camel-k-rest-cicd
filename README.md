@@ -83,3 +83,9 @@ kubectl apply -f ci/pipeline.yaml -n development
 ```
 kubectl get pipelinerun pipeline-cicd-run -w -n development
 ```
+
+Check pipeline details (ie, when errors):
+
+```
+kubectl get pipelinerun pipeline-cicd-run -o yaml -n development
+```
