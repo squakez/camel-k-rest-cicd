@@ -1,0 +1,189 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kamel-run
+  description: Run an integration with Kamel CLI
+spec:
+  params:
+    - name: filename
+      description: the integration source we want to run
+    - name: namespace
+      description: the namespace where to run the integration
+  results:
+    - name: integration-name
+      description: The name of the integration    
+  workspaces:
+  - name: source
+  steps:
+  - name: run
+    # The container provides the kamel binary we need
+    image: docker.io/apache/camel-k:1.10.0
+    script: |
+      cd $(workspaces.source.path)
+      # Run the integration and let's use the output to scrape the integration name
+      # We need to use the --wait option in order to wait until the Integration is running
+      kamel_output=$(kamel run $(params.filename) -n $(params.namespace) --wait)
+      echo $kamel_output | grep -oP 'Integration ".*?" (updated|created)' | awk -F ' ' '{print $2}' | sed "s/\"//g" | tr -d '\n' | tee $(results.integration-name.path)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kamel-promote
+  description: promote an Integration to an higher environment
+spec:
+  params:
+    - name: integration-name
+      description: the integration we want to promote
+    - name: namespace
+      description: the namespace source
+    - name: to
+      description: the namespace destination           
+  workspaces:
+  - name: source
+  steps:
+  - name: promote
+    image: docker.io/apache/camel-k:1.10.0
+    script: |
+      kamel promote $(params.integration-name) -n $(params.namespace) --to $(params.to)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: execute-test
+  description: Execute some smoke test
+spec:
+  params:
+    - name: script
+      description: the script to execute 
+    - name: hostname
+      description: the hostname we want to test
+  workspaces:
+  - name: source
+  steps:
+  - name: test
+    # use any image containing the tooling required by your test
+    image: alpine/curl
+    script: |
+      cd $(workspaces.source.path)
+      $(params.script) $(params.hostname)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: pipeline-cicd
+spec:
+  description: | 
+    CICD pipeline for a microservice
+  params:
+  - name: repo-url
+    type: string
+    description: The git repo URL to clone from.
+  - name: repo-branch
+    type: string
+    description: The git repo branch.    
+  workspaces:
+  - name: shared-data
+    description: | 
+      This workspace contains the cloned repo files, so they can be read by the
+      next task.
+  tasks:
+  # Clone repo
+  - name: fetch-source
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-data
+    params:
+    - name: url
+      value: $(params.repo-url)
+    - name: revision
+      value: $(params.repo-branch)      
+  # Run in test environment
+  - name: kamel-run
+    runAfter: ["fetch-source"]
+    taskRef:
+      name: kamel-run
+    workspaces:
+    - name: source
+      workspace: shared-data      
+    params:
+      - name: filename
+        value: my-rest.yaml
+      - name: namespace
+        value: development
+  # E2E in test environment
+  - name: e2e-test
+    runAfter: ["kamel-run"]
+    taskRef:
+      name: execute-test
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params:
+      - name: script
+        value: test/e2e-test.sh    
+      - name: hostname
+        value: $(tasks.kamel-run.results.integration-name).development
+  # Promote to production
+  - name: kamel-promote
+    runAfter: ["e2e-test"]
+    taskRef:
+      name: kamel-promote
+    workspaces:
+    - name: source
+      workspace: shared-data      
+    params:
+      - name: integration-name
+        value: $(tasks.kamel-run.results.integration-name)
+      - name: namespace
+        value: development
+      - name: to
+        value: production
+  # Smoke test in the production environment
+  - name: smoke-test
+    runAfter: ["kamel-promote"]
+    taskRef:
+      name: execute-test
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params:
+      - name: script
+        value: test/smoke-test.sh    
+      - name: hostname
+        value: $(tasks.kamel-run.results.integration-name).production                
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: pipeline-cicd-run
+spec:
+  pipelineRef:
+    name: pipeline-cicd
+  taskRunSpecs:
+    - pipelineTaskName: kamel-run
+      taskServiceAccountName: camel-k-pipeline-sa
+    - pipelineTaskName: kamel-promote
+      taskServiceAccountName: camel-k-pipeline-sa   
+  podTemplate:
+    securityContext:
+      fsGroup: 65532
+  workspaces:
+  - name: shared-data
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+  - name: git-credentials
+    secret:
+      secretName: git-credentials
+  params:
+  - name: repo-url
+    value: https://github.com/squakez/camel-k-rest-postgresql-quarkus-native.git
+  - name: repo-branch
+    value: feat/tekton    
