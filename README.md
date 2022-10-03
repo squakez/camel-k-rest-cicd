@@ -57,12 +57,22 @@ kubectl exec -it postgres-dev-ddddc75cb-gxzff -n development -- psql -U postgres
 
 ## Camel K Service account privileges
 
+We will create a `service account` in the development namespace in order to be able to work both on `development` and `production`:
+
 ```
 kubectl apply -f ci/sa.yaml -n development
 kubectl apply -f ci/rolebinding.yaml -n development
 ```
 
 ## Run the pipeline
+
+Install the [`git-clone` task from Tekton hub](https://hub.tekton.dev/tekton/task/git-clone) int `development` namespace: 
+
+```
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.8/git-clone.yaml -n development
+```
+
+Run the pipeline:
 
 ```
 kubectl apply -f ci/pipeline.yaml -n development

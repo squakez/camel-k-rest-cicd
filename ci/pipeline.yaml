@@ -184,6 +184,6 @@ spec:
       secretName: git-credentials
   params:
   - name: repo-url
-    value: https://github.com/squakez/camel-k-rest-postgresql-quarkus-native.git
+    value: https://github.com/squakez/camel-k-rest-cicd.git
   - name: repo-branch
-    value: feat/tekton    
+    value: main    
