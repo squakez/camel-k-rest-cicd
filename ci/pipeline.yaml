@@ -154,36 +154,4 @@ spec:
         value: test/smoke-test.sh    
       - name: hostname
         value: $(tasks.kamel-run.results.integration-name).production                
----
-apiVersion: tekton.dev/v1beta1
-kind: PipelineRun
-metadata:
-  name: pipeline-cicd-run
-spec:
-  pipelineRef:
-    name: pipeline-cicd
-  taskRunSpecs:
-    - pipelineTaskName: kamel-run
-      taskServiceAccountName: camel-k-pipeline-sa
-    - pipelineTaskName: kamel-promote
-      taskServiceAccountName: camel-k-pipeline-sa   
-  podTemplate:
-    securityContext:
-      fsGroup: 65532
-  workspaces:
-  - name: shared-data
-    volumeClaimTemplate:
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-  - name: git-credentials
-    secret:
-      secretName: git-credentials
-  params:
-  - name: repo-url
-    value: https://github.com/squakez/camel-k-rest-cicd.git
-  - name: repo-branch
-    value: main    
+    

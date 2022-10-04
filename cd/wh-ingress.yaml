@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-cd-pipeline
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /my-cd-pipeline
+            pathType: Exact
+            backend:
+              service:
+                # Will forward events to an EventListener called github-push
+                name: el-github-push
+                port:
+                  number: 8080

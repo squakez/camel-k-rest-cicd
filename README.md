@@ -89,3 +89,31 @@ Check pipeline details (ie, when errors):
 ```
 kubectl get pipelinerun pipeline-cicd-run -o yaml -n development
 ```
+
+## Continuos Deployment
+
+Solution based on the blog posted at https://www.arthurkoziel.com/tutorial-tekton-triggers-with-github-integration/
+
+### Install triggers
+
+https://tekton.dev/docs/triggers/install/
+
+kubectl apply -f cd-triggers-sa.yaml
+kubectl apply -f gh-interceptor-secret.yaml
+
+NOTE: you may want to enable the addon on minikube via `minikube addons enable ingress`
+
+kubectl apply -f wh-ingress.yaml
+
+kubectl get ingress
+
+### Test webhook locally
+
+cat webhook-sample.json | http post http://192.168.49.2:32698/my-cd-pipeline \
+    X-GitHub-Delivery:68b4bf58-4325-11ed-8953-e63aa016e438 \
+    X-GitHub-Event:push \
+    X-GitHub-Hook-ID:382649378 \
+    X-GitHub-Hook-Installation-Target-ID:544844898 \
+    X-GitHub-Hook-Installation-Target-Type:repository \
+    X-Hub-Signature:sha1=085ba71fa32900cb3d86c75ec9777c77cb0614fb \
+    X-Hub-Signature-256:sha256=e306e4533c150dac86b0bb742bf11d7205d0cc9c6806faeb50df4b4c13de4cfc

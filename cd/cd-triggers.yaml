@@ -1,0 +1,59 @@
+---
+# The event listener in charge to intercept the GH push events
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: github-push
+spec:
+  serviceAccountName: tekton-triggers-cd
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+          params:
+            - name: "secretRef"
+              value:
+                secretName: github-interceptor-secret
+                secretKey: secretToken
+            - name: "eventTypes"
+              value: ["push"]
+      template:
+        ref: github-push-pipeline-template
+---
+# The Pipeline definition that will be triggereds
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: github-push-pipeline-template
+spec:
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: github-push-pipeline-run-
+      spec:
+        pipelineRef:
+          name: pipeline-cicd
+        taskRunSpecs:
+          - pipelineTaskName: kamel-run
+            taskServiceAccountName: camel-k-pipeline-sa
+          - pipelineTaskName: kamel-promote
+            taskServiceAccountName: camel-k-pipeline-sa   
+        podTemplate:
+          securityContext:
+            fsGroup: 65532
+        workspaces:
+        - name: shared-data
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+              - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 1Gi
+        params:
+        - name: repo-url
+          value: https://github.com/squakez/camel-k-rest-cicd.git
+        - name: repo-branch
+          value: main
