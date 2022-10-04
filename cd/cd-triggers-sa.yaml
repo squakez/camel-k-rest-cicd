@@ -54,8 +54,13 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: tekton-triggers-cd
-  namespace: default
+  namespace: development
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: tekton-triggers-example-clusterrole
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-triggers-cd  

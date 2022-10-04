@@ -12,10 +12,7 @@ spec:
         - ref:
             name: "github"
           params:
-            - name: "secretRef"
-              value:
-                secretName: github-interceptor-secret
-                secretKey: secretToken
+            # You may want to include a secure interceptor
             - name: "eventTypes"
               value: ["push"]
       template:

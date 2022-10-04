@@ -6,7 +6,7 @@ This repository contains a CICD pipeline to run a Camel K integration using Tekt
 
 You can install Tekton pipelines operator following the [Tekton official installation guide](https://tekton.dev/docs/pipelines/install/#installing-tekton-pipelines-on-kubernetes).
 
-## Camel K operator installation
+# Camel K operator installation
 
 ```
 kubectl create namespace development
@@ -33,7 +33,7 @@ kubectl apply -f db/conf-prod.yaml -n production
 kubectl create secret generic my-datasource --from-file db/datasource-prod.properties -n production
 ```
 
-NOTE: the database settings are not meant to be used in any production environment without applying proper security policies.
+NOTE: the database settings are not meant to be used in any production environment without applying proper security policies. The Pod running is ephemeral, so, anything stored there will be lost when restarting.
 
 ### Initialize DB
 
@@ -90,7 +90,7 @@ Check pipeline details (ie, when errors):
 kubectl get pipelinerun pipeline-cicd-run -o yaml -n development
 ```
 
-## Continuos Deployment
+# Continuos Deployment
 
 Solution based on the blog posted at https://www.arthurkoziel.com/tutorial-tekton-triggers-with-github-integration/
 
@@ -98,22 +98,23 @@ Solution based on the blog posted at https://www.arthurkoziel.com/tutorial-tekto
 
 https://tekton.dev/docs/triggers/install/
 
-kubectl apply -f cd-triggers-sa.yaml
-kubectl apply -f gh-interceptor-secret.yaml
+kubectl apply -f cd-triggers-sa.yaml -n development
 
 NOTE: you may want to enable the addon on minikube via `minikube addons enable ingress`
 
-kubectl apply -f wh-ingress.yaml
+kubectl apply -f wh-ingress.yaml -n development
 
-kubectl get ingress
+kubectl get ingress / minikube service list (to simuate a webhook post locally)
+
+kubectl apply -f cd-triggers.yaml -n development
+
+Watch out for any new pipeline triggered:
+
+k get pipelinerun -n development -w
+
+Make change and push to the github repo.
 
 ### Test webhook locally
 
-cat webhook-sample.json | http post http://192.168.49.2:32698/my-cd-pipeline \
-    X-GitHub-Delivery:68b4bf58-4325-11ed-8953-e63aa016e438 \
-    X-GitHub-Event:push \
-    X-GitHub-Hook-ID:382649378 \
-    X-GitHub-Hook-Installation-Target-ID:544844898 \
-    X-GitHub-Hook-Installation-Target-Type:repository \
-    X-Hub-Signature:sha1=085ba71fa32900cb3d86c75ec9777c77cb0614fb \
-    X-Hub-Signature-256:sha256=e306e4533c150dac86b0bb742bf11d7205d0cc9c6806faeb50df4b4c13de4cfc
+http post http://192.168.49.2:32698/my-cd-pipeline X-GitHub-Event:push json=test 
+    
