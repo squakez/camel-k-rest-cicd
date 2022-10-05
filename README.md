@@ -72,10 +72,16 @@ Install the [`git-clone` task from Tekton hub](https://hub.tekton.dev/tekton/tas
 kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.8/git-clone.yaml -n development
 ```
 
-Run the pipeline:
+Install the pipeline:
 
 ```
 kubectl apply -f ci/pipeline.yaml -n development
+```
+
+Run the pipeline:
+
+```
+kubectl apply -f ci/pipeline-run.yaml -n development
 ```
 
 ### Monitor the pipeline
