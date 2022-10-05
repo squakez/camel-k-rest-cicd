@@ -53,4 +53,4 @@ spec:
         - name: repo-url
           value: https://github.com/squakez/camel-k-rest-cicd.git
         - name: repo-branch
-          value: main
+          value: feat/cd
