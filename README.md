@@ -114,6 +114,12 @@ k get pipelinerun -n development -w
 
 Make change and push to the github repo.
 
+```
+{"severity":"info","timestamp":"2022-10-04T11:02:30.537Z","logger":"eventlistener","caller":"sink/sink.go:409","message":"ResolvedParams : []","eventlistener":"github-push","namespace":"development","/triggers-eventid":"b7fda1d3-044e-402a-b2c2-900afd849681","eventlistenerUID":"98b1322c-1793-425a-8577-8fec3e708b3f","/triggers-eventid":"b7fda1d3-044e-402a-b2c2-900afd849681","/trigger":"github-listener"}
+{"severity":"info","timestamp":"2022-10-04T11:02:30.539Z","logger":"eventlistener","caller":"resources/create.go:98","message":"Generating resource: kind: &APIResource{Name:pipelineruns,Namespaced:true,Kind:PipelineRun,Verbs:[delete deletecollection get list patch create update watch],ShortNames:[pr prs],SingularName:pipelinerun,Categories:[tekton tekton-pipelines],Group:tekton.dev,Version:v1beta1,StorageVersionHash:RcAKAgPYYoo=,}, name: github-push-pipeline-run-"}
+{"severity":"info","timestamp":"2022-10-04T11:02:30.539Z","logger":"eventlistener","caller":"resources/create.go:106","message":"For event ID \"b7fda1d3-044e-402a-b2c2-900afd849681\" creating resource tekton.dev/v1beta1, Resource=pipelineruns"}
+```
+
 ### Test webhook locally
 
 http post http://192.168.49.2:32698/my-cd-pipeline X-GitHub-Event:push json=test 
